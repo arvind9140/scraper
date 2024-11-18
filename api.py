@@ -20,33 +20,25 @@ from selenium.webdriver.support import expected_conditions as EC
 app = Flask(__name__)
 token = os.getenv("TOKEN")
 
-# Setup Chrome options
 chrome_options = Options()
-chrome_options.add_argument("--disable-gpu")
-chrome_options.headless = False  # Set to True if you want headless mode
+chrome_options.headless = False  
 
 
 
-# Helper function to setup Selenium WebDriver
+
+
 def setup_selenium():
-    # Use ChromeDriverManager to ensure the correct ChromeDriver version is installed
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     
     return driver
-
-# Helper function to fetch HTML content using Selenium
 def fetch_html_selenium(url):
     driver = setup_selenium()
     try:
         driver.get(url)
-
-        # Add random delays to mimic human behavior
-        time.sleep(5)  # Adjust this to simulate time for user to read or interact
-
-        # Add more realistic actions like scrolling
+        time.sleep(5) 
+       
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)  # Simulate time taken to scroll and read
-
+        time.sleep(3)  
         html = driver.page_source
         return html
     except Exception as e:
@@ -54,61 +46,40 @@ def fetch_html_selenium(url):
     finally:
         driver.quit()
 
-# Helper function to clean HTML content by removing unwanted tags (e.g., headers, footers)
 def clean_html(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
-
-    # Remove headers and footers based on common HTML tags or classes
     for element in soup.find_all(["header", "footer"]):
-        element.decompose()  # Remove these tags and their content
+        element.decompose()  
 
     return str(soup)
 
-# Helper function to convert cleaned HTML content into Markdown format
 def html_to_markdown_with_readability(html_content):
     cleaned_html = clean_html(html_content)
-
-    # Convert to markdown
     markdown_converter = html2text.HTML2Text()
     markdown_converter.ignore_links = False
     markdown_content = markdown_converter.handle(cleaned_html)
 
     return markdown_content
 
-# Helper function to login and scrape LinkedIn profile
 def scrape_linkedin_profile(email, password, linkedin_url):
     
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    
+    driver = setup_selenium()
     try:
-        # Login to LinkedIn
         actions.login(driver, email, password)
-        
-        # Scrape LinkedIn profile
         person = Person(linkedin_url, driver=driver)
-        
-        # Print available attributes of the person object for debugging
-        # print(person.__dict__)  # Debug line to print all attributes of the Person object
-       
     finally:
         driver.quit()
-    
     return person.__dict__
 
 def scrape_linkedin_company(email, password, linkedin_url):
-    # Setup Selenium driver
+    
     driver = setup_selenium()
     
     try:
-        # Scrape company data using the LinkedIn scraper library
         actions.login(driver, email, password)
         company = Company(linkedin_url,driver=driver)
-        print("company: ",company)
-        print("company_dict: ",company.__dict__)  # Debug line to print all attributes of the Company object
-    
     finally:
-        driver.quit()
-        
+        driver.quit()  
     return company.__dict__
 
 def is_linkedin_url(url):
@@ -121,10 +92,8 @@ def is_linkedin_url(url):
     Returns:
     - bool: True if the URL is from LinkedIn, False otherwise
     """
-    # Regular expression to match LinkedIn URLs (both http and https)
     linkedin_pattern = r"https:\/\/(www\.)?linkedin\.com\/.*"
     
-    # Match the LinkedIn pattern
     if re.match(linkedin_pattern, url):
         return True
     return False
@@ -142,24 +111,18 @@ def is_valid_url(url):
     """
     try:
         result = urlparse(url)
-        return all([result.scheme, result.netloc])  # Check if it's a valid URL with a scheme (http/https) and domain
+        return all([result.scheme, result.netloc])  
     except ValueError:
         return False
 @app.route('/scrape', methods=['POST'])
 def scrape():
-    # Get data from POST request
     data = request.json
     url = data.get('url')
-
-    # Fetch email and password from environment variables
     email = os.getenv("LINKEDIN_USER")
     password = os.getenv("LINKEDIN_PASSWORD")
-
-    # Check if email and password are set in environment variables
     if not email or not password:
         return jsonify({"error": "Email and password must be set in environment variables"}), 400
     
-    # Check if LinkedIn URL is provided in the request
     if not url:
         return jsonify({"error": "LinkedIn URL is required"}), 400
     
@@ -168,15 +131,15 @@ def scrape():
         
         if is_linkedin_url(url):
             if "linkedin.com/company/" in url:
-                # Scrape LinkedIn company page data
-                company_data = scrape_linkedin_company(email, password, url)
-                data = company_data
-                print(data)
+                data = scrape_linkedin_company(email, password, url)
+                
+                
             else:    
-                data = scrape_linkedin_profile(email, password, url)# Scrape LinkedIn profile data
-             
+                data = scrape_linkedin_profile(email, password, url)
+                
         elif  is_valid_url(url):
             raw_html = fetch_html_selenium(url)
+
             data = html_to_markdown_with_readability(raw_html)
         else:
             return jsonify({"error": "Invalid URL"}), 400
@@ -200,7 +163,7 @@ def scrape():
                 
                 {
                     "role": "user",
-                    "content": f"Please summarize the key details from the LinkedIn profile company website and portfolio  for the prospect. Focus on their current role key responsibilities and relevant experience'{data}'",
+                    "content": f"Summarize  the information from the LinkedIn profile details '{data}'",
                 }
             ],
             "max_tokens": 5000,
@@ -210,7 +173,7 @@ def scrape():
 
         }
         response = requests.post(initializ_url, headers=headers, json=data)
-        # print(response.json())
+        
         return jsonify(response.json()), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

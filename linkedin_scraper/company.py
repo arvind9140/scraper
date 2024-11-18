@@ -10,6 +10,7 @@ from .person import Person
 import time
 import os
 import json
+import logging
 
 AD_BANNER_CLASSNAME = ('ad-banner-container', '__ad')
 
@@ -209,7 +210,6 @@ class Company(Scraper):
        #section ID is no longer needed, we are using class name now.
         #grid = driver.find_elements_by_tag_name("section")[section_id]
         grid = driver.find_element(By.CLASS_NAME, "artdeco-card.org-page-details-module__card-spacing.artdeco-card.org-about-module__margin-bottom")
-        print(grid)
         descWrapper = grid.find_elements(By.TAG_NAME, "p")
         if len(descWrapper) > 0:
             self.about_us = descWrapper[0].text.strip()
@@ -238,128 +238,66 @@ class Company(Scraper):
                 self.founded = values[i+x_off].text.strip()
             elif txt == 'Specialties':
                 self.specialties = "\n".join(values[i+x_off].text.strip().split(", "))
+        print(self)
+        # try:
+        #     grid = driver.find_element(By.CLASS_NAME, "mt1")
+        #     spans = grid.find_elements(By.TAG_NAME, "span")
+        #     for span in spans:
+        #         txt = span.text.strip()
+        #         if "See all" in txt and "employees on LinkedIn" in txt:
+        #             self.headcount = int(txt.replace("See all", "").replace("employees on LinkedIn", "").strip())
+        # except NoSuchElementException: # Does not exist in page, skip it
+        #     pass
 
-        try:
-            grid = driver.find_element(By.CLASS_NAME, "mt1")
-            print("grid:",grid)
-            spans = grid.find_elements(By.TAG_NAME, "span")
-            for span in spans:
-                txt = span.text.strip()
-                if "See all" in txt and "employees on LinkedIn" in txt:
-                    self.headcount = int(txt.replace("See all", "").replace("employees on LinkedIn", "").strip())
-        except NoSuchElementException: # Does not exist in page, skip it
-            pass
-
-        driver.execute_script("window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));")
+        # driver.execute_script("window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));")
 
 
-        try:
-            _ = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, 'company-list')))
-            showcase, affiliated = driver.find_elements(By.CLASS_NAME, "company-list")
-            driver.find_element(By.ID,"org-related-companies-module__show-more-btn").click()
+        # try:
+        #     _ = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, 'company-list')))
+        #     showcase, affiliated = driver.find_elements(By.CLASS_NAME, "company-list")
+        #     driver.find_element(By.ID,"org-related-companies-module__show-more-btn").click()
 
-            # get showcase
-            for showcase_company in showcase.find_elements(By.CLASS_NAME, "org-company-card"):
-                companySummary = CompanySummary(
-                        linkedin_url = showcase_company.find_element(By.CLASS_NAME, "company-name-link").get_attribute("href"),
-                        name = showcase_company.find_element(By.CLASS_NAME, "company-name-link").text.strip(),
-                        followers = showcase_company.find_element(By.CLASS_NAME, "company-followers-count").text.strip()
-                    )
-                self.showcase_pages.append(companySummary)
+        #     # get showcase
+        #     for showcase_company in showcase.find_elements(By.CLASS_NAME, "org-company-card"):
+        #         companySummary = CompanySummary(
+        #                 linkedin_url = showcase_company.find_element(By.CLASS_NAME, "company-name-link").get_attribute("href"),
+        #                 name = showcase_company.find_element(By.CLASS_NAME, "company-name-link").text.strip(),
+        #                 followers = showcase_company.find_element(By.CLASS_NAME, "company-followers-count").text.strip()
+        #             )
+        #         self.showcase_pages.append(companySummary)
 
-            # affiliated company
+        #     # affiliated company
 
-            for affiliated_company in showcase.find_element(By.CLASS_NAME, "org-company-card"):
-                companySummary = CompanySummary(
-                         linkedin_url = affiliated_company.find_element(By.CLASS_NAME, "company-name-link").get_attribute("href"),
-                        name = affiliated_company.find_element(By.CLASS_NAME, "company-name-link").text.strip(),
-                        followers = affiliated_company.find_element(By.CLASS_NAME, "company-followers-count").text.strip()
-                        )
-                self.affiliated_companies.append(companySummary)
+        #     for affiliated_company in showcase.find_element(By.CLASS_NAME, "org-company-card"):
+        #         companySummary = CompanySummary(
+        #                  linkedin_url = affiliated_company.find_element(By.CLASS_NAME, "company-name-link").get_attribute("href"),
+        #                 name = affiliated_company.find_element(By.CLASS_NAME, "company-name-link").text.strip(),
+        #                 followers = affiliated_company.find_element(By.CLASS_NAME, "company-followers-count").text.strip()
+        #                 )
+        #         self.affiliated_companies.append(companySummary)
 
-        except:
-            pass
+        # except:
+        #     pass
 
-        if get_employees:
-            self.employees = self.get_employees()
+        # if get_employees:
+        #     self.employees = self.get_employees()
 
-        driver.get(self.linkedin_url)
+        # driver.get(self.linkedin_url)
 
-        if close_on_complete:
-            driver.close()
+        # if close_on_complete:
+        #     driver.close()
 
-    def scrape_not_logged_in(self, close_on_complete = True, retry_limit = 10, get_employees = True):
-        driver = self.driver
-        retry_times = 0
-        while self.is_signed_in() and retry_times <= retry_limit:
-            page = driver.get(self.linkedin_url)
-            retry_times = retry_times + 1
-
-        self.name = driver.find_element(By.CLASS_NAME, "name").text.strip()
-
-        self.about_us = driver.find_element(By.CLASS_NAME, "basic-info-description").text.strip()
-        self.specialties = self.__get_text_under_subtitle_by_class(driver, "specialties")
-        self.website = self.__get_text_under_subtitle_by_class(driver, "website")
-        self.headquarters = driver.find_element(By.CLASS_NAME, "adr").text.strip()
-        self.industry = driver.find_element(By.CLASS_NAME, "industry").text.strip()
-        self.company_size = driver.find_element(By.CLASS_NAME, "company-size").text.strip()
-        self.company_type = self.__get_text_under_subtitle_by_class(driver, "type")
-        self.founded = self.__get_text_under_subtitle_by_class(driver, "founded")
-
-        # get showcase
-        try:
-            driver.find_element(By.ID,"view-other-showcase-pages-dialog").click()
-            WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.ID, 'dialog')))
-
-            showcase_pages = driver.find_elements(By.CLASS_NAME, "company-showcase-pages")[1]
-            for showcase_company in showcase_pages.find_elements(By.TAG_NAME, "li"):
-                name_elem = showcase_company.find_element(By.CLASS_NAME, "name")
-                companySummary = CompanySummary(
-                    linkedin_url = name_elem.find_element(By.TAG_NAME, "a").get_attribute("href"),
-                    name = name_elem.text.strip(),
-                    followers = showcase_company.text.strip().split("\n")[1]
-                )
-                self.showcase_pages.append(companySummary)
-            driver.find_element(By.CLASS_NAME, "dialog-close").click()
-        except:
-            pass
-
-        # affiliated company
-        try:
-            affiliated_pages = driver.find_element(By.CLASS_NAME, "affiliated-companies")
-            for i, affiliated_page in enumerate(affiliated_pages.find_elements(By.CLASS_NAME, "affiliated-company-name")):
-                if i % 3 == 0:
-                    affiliated_pages.find_element(By.CLASS_NAME, "carousel-control-next").click()
-
-                companySummary = CompanySummary(
-                    linkedin_url = affiliated_page.find_element(By.TAG_NAME, "a").get_attribute("href"),
-                    name = affiliated_page.text.strip()
-                )
-                self.affiliated_companies.append(companySummary)
-        except:
-            pass
-
-        if get_employees:
-            self.employees = self.get_employees()
-
-        driver.get(self.linkedin_url)
-
-        if close_on_complete:
-            driver.close()
-
+ 
     def __repr__(self):
-        _output = {}
-        _output['name'] = self.name
-        _output['about_us'] = self.about_us
-        _output['specialties'] = self.specialties
-        _output['website'] = self.website
-        _output['industry'] = self.industry
-        _output['company_type'] = self.name
-        _output['headquarters'] = self.headquarters
-        _output['company_size'] = self.company_size
-        _output['founded'] = self.founded
-        _output['affiliated_companies'] = self.affiliated_companies
-        _output['employees'] = self.employees
-        _output['headcount'] = self.headcount
-        
-        return json.dumps(_output).replace('\n', '')
+        return "<Company {name}\n\nAbout Us\n{about_us}\n\nWebsite\n{website}\n\nHeadquarters\n{headquarters}\n\nFounded\n{founded}\n\nIndustry\n{industry}\n\nCompany Size\n{company_size}\n\nSpecialties\n{specialties}\n\nEmployees\n{employees}>".format(
+            name=self.name,
+            about_us=self.about_us or "N/A",  
+            website=self.website or "N/A",   
+            headquarters=self.headquarters or "N/A", 
+            founded=self.founded or "N/A",   
+            industry=self.industry or "N/A", 
+            company_size=self.company_size or "N/A", 
+            specialties=self.specialties or "N/A", 
+            employees=len(self.employees) if self.employees else "N/A"  
+        )
+
