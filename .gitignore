@@ -1,0 +1,42 @@
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environment directories
+venv/
+myenv/
+
+# Ignore environment variable files
+.env
+app.py
+index.html
+scraper.py
+scraper_module.py
+streamlit_app.py
+output/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+*.pyi
+*.pyw
+*.pyz
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+*.pyi
+*.pyw
+*.pyz
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+*.pyi
+*.pyw
+linkedin_scraper/__pycache__/
+
+
+# Ignore other files or directories as needed
