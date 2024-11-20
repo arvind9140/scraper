@@ -120,6 +120,7 @@ def scrape():
     url = data.get('url')
     email = os.getenv("LINKEDIN_USER")
     password = os.getenv("LINKEDIN_PASSWORD")
+    
     if not email or not password:
         return jsonify({"error": "Email and password must be set in environment variables"}), 400
     
@@ -127,20 +128,29 @@ def scrape():
         return jsonify({"error": "LinkedIn URL is required"}), 400
     
     try:
-        data= None
-        
+        data_response = None
         if is_linkedin_url(url):
             if "linkedin.com/company/" in url:
-                data = scrape_linkedin_company(email, password, url)
-                
-                
-            else:    
-                data = scrape_linkedin_profile(email, password, url)
-                
-        elif  is_valid_url(url):
-            raw_html = fetch_html_selenium(url)
+                data_response = scrape_linkedin_company(email, password, url)
+                system_message = f"You are an experienced Sales Development Representative (SDR) at **Initializ**. Your task is to create a personalized outreach strategy for a prospect based on their company profile, focusing on the company's industry, key challenges, and goals. The company is '{data_response.get('name')}', and they are in the {data_response.get('industry')} industry. Begin by summarizing the company's main challenges and priorities."
+                user_message = f"Summarize the information from the LinkedIn company profile of '{data_response.get('name')}' in the {data_response.get('industry')} industry. Highlight the company's challenges and any relevant news or events."
 
-            data = html_to_markdown_with_readability(raw_html)
+            else:    
+                data_response = scrape_linkedin_profile(email, password, url)
+                
+                system_message = f"You are an experienced Sales Development Representative (SDR) at **Initializ**. Your task is to create a personalized outreach strategy for a prospect based on their LinkedIn profile, focusing on their current role, industry, and company. The prospect is {data_response.get('name')}, working as {data_response.get('title')} at {data_response.get('company_name')}. Begin by summarizing the prospect's current role and responsibilities at {data_response.get('company_name')}, including any recent experience."
+
+                user_message = f"Summarize the information from the LinkedIn profile of '{data_response.get('name')}' who is working as {data_response.get('title')} at {data_response.get('company_name')}. Focus on their most recent experience and any relevant information that would be useful for creating an outreach strategy."
+
+        
+        elif is_valid_url(url):
+            raw_html = fetch_html_selenium(url)
+            data_response = html_to_markdown_with_readability(raw_html)
+
+            system_message = f"You are an experienced Sales Development Representative (SDR) at **Initializ**. Your task is to create a personalized outreach strategy based on the content of a webpage. The webpage provides useful information that can help you understand the potential prospect's needs. Here is the content: {data_response}"
+
+            user_message = f"Summarize the content of the following webpage: {data_response}. Focus on any information that can help create an outreach strategy for a prospect."
+
         else:
             return jsonify({"error": "Invalid URL"}), 400
         
@@ -149,35 +159,23 @@ def scrape():
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
         }
-        data = {
-
+        payload = {
             "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
             "messages": [
-                {
-                    "role": "system",
-                    "content": "You are an experienced Sales Development Representative (SDR) at **Initializ**. Your task is to create a personalized outreach strategy for a prospect based on their LinkedIn profile, focusing on their current role, industry, and company. The strategy should demonstrate a deep understanding of both **Initializ's offerings** and the prospect's potential needs. Begin by summarizing the prospects current position, including their company and key responsibilities, and ensure you focus on their most recent experience, which should be indicated by a date range ending with present. Do not include information from older roles unless it is explicitly relevant. Next, identify **three key challenges** the prospect’s company is likely facing, aligning these challenges with **Initializ's value propositions** that are specific to the prospect's role (e.g., Director of Information Technology). For each challenge, explain how **Initializ** can address the need, providing clear and specific solutions that benefit both the company and the prospect's role. Offer a concrete example of how **Initializ** could solve a unique challenge for the company, ensuring that the example is highly relevant to the industry or organizational structure. Lastly, identify a recent newsworthy event or development related to the company or the prospect's role, and explain how it connects to the challenges or priorities identified earlier, demonstrating how **Initializ** can help in the context of these recent developments.",
-                    
-                    
-                },
-                
-                
-                {
-                    "role": "user",
-                    "content": f"Summarize  the information from the LinkedIn profile details '{data}'",
-                }
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
             ],
             "max_tokens": 5000,
             "temperature": 0.7,
-            "stream": False,
-            # "stream": True
-
+            "stream": False
         }
-        response = requests.post(initializ_url, headers=headers, json=data)
+        
+        response = requests.post(initializ_url, headers=headers, json=payload)
         
         return jsonify(response.json()), 200
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=8000)
 
