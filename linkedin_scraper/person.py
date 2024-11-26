@@ -61,7 +61,8 @@ class Person(Scraper):
         self.driver = driver
 
         if scrape:
-            self.scrape(close_on_complete)
+           
+            self.scrape(close_on_complete= close_on_complete)
 
     def add_about(self, about):
         self.about.append(about)
@@ -87,8 +88,6 @@ class Person(Scraper):
     def scrape(self, close_on_complete=True):
         if self.is_signed_in():
             self.scrape_logged_in(close_on_complete=close_on_complete)
-        else:
-            print("you are not logged in!")
 
     def _click_see_more_by_class_name(self, class_name):
         try:
@@ -271,22 +270,8 @@ class Person(Scraper):
 
     def scrape_logged_in(self, close_on_complete=True):
         driver = self.driver
-        duration = None
-
-        root = WebDriverWait(driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
-            EC.presence_of_element_located(
-                (
-                    By.CLASS_NAME,
-                    self.__TOP_CARD,
-                )
-            )
-        )
-        self.focus()
-        self.wait(5)
-
         # get name and location
         self.get_name_and_location()
-
         self.open_to_work = self.is_open_to_work()
 
         # get about

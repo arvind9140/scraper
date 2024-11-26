@@ -238,7 +238,7 @@ class Company(Scraper):
                 self.founded = values[i+x_off].text.strip()
             elif txt == 'Specialties':
                 self.specialties = "\n".join(values[i+x_off].text.strip().split(", "))
-        print(self)
+        
         # try:
         #     grid = driver.find_element(By.CLASS_NAME, "mt1")
         #     spans = grid.find_elements(By.TAG_NAME, "span")
