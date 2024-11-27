@@ -1,4 +1,5 @@
 import getpass
+import os
 from . import constants as c
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -37,9 +38,9 @@ def login(driver, email=None, password=None, cookie = None, timeout=10):
   
     element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, c.VERIFY_LOGIN_ID)))
   
-def _login_with_cookie(driver, cookie):
+def _login_with_cookie(driver):
     driver.get("https://www.linkedin.com/login")
     driver.add_cookie({
       "name": "li_at",
-      "value": cookie
+      "value":  os.getenv("COOKIE")
     })
