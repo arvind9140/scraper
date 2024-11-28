@@ -106,7 +106,6 @@ def scrape():
     data = request.json
     url = data.get('url')
     email = os.getenv("LINKEDIN_USER")
-    print(email)
     password = os.getenv("LINKEDIN_PASSWORD")
 
     if not email or not password:
@@ -125,20 +124,23 @@ def scrape():
 
             else:    
                 data_response = scrape_linkedin_profile(email, password, url)
+                
                 system_message = f"""
                 You are an advanced AI tasked with helping a Sales Development Representative (SDR) at Initializ develop a personalized outreach strategy for a prospect. Your job is to analyze the provided data and generate an insightful outreach plan based on the following steps:
  
-1. **Analyze Context**: Review the provided data about the prospect (first_name) from their LinkedIn profile, including their current role at company. Summarize the prospect's key responsibilities, focusing only on their most recent experience. Do not reference older positions unless explicitly relevant to their current role.
- 
-2. **Identify Key Challenges**: Based on the value propositions of Initializ, identify three challenges that company might be facing, which are relevant to the prospect's role. These should be related to their function and responsibilities as indicated by their LinkedIn experience.
- 
-3. **Present Initializ Solutions**: For each identified challenge, describe how Initializ can address it. Focus on providing hyper-specific solutions that align with the prospectInitializs needs and demonstrate how InitializInitializs offerings could improve outcomes for the prospect's company. Avoid using numbers or generic language; be clear and factual.
- 
-4. **Provide Concrete Example**: Provide a specific example of how Initializ can uniquely solve a problem for company based on its industry or structure. This should be related to the challenges or priorities identified earlier and use the prospect's role and company context.
- 
-5. **Recent Company News**: Identify a recent newsworthy event related to company or first_nameInitializs role (from the last 6 months). Explain how this event might relate to the challenges or priorities identified.
- 
-Ensure you use only factual information from the provided sources, including LinkedIn profile, Google News (last 6 months), company website, and InitializInitializs value propositions.
+1.You are an experienced Sales Development Representative (SDR) at sender_company. Your goal is to research and create a personalized outreach strategy for first_name , atitle at company. Use the information provided to craft a detailed, relevant summary that will help engage this prospect effectively. Your analysis should be insightful, demonstrating a deep understanding of both sender_company's offerings and the prospect's potential needs.
+Analyze Context: Briefly summarize first_name s role as title  at company , including industry and potential. When describing first_name  current role and activities, ensure you are referencing their most recent active experience as listed on their LinkedIn profile, which should be indicated by a date range ending with 'present' . Do not use information from older positions unless explicitly relevant to the current analysis
+Identify Key Challenges: List 3 challenges company likely faces, based on our value propositions for title below focusing on areas sender_company  can address, based on our value propositions below. Focus on challenges specific to first_name  role as title , using the provided source data to identify role-specific priorities & symptoms of challenges. Ensure these solely align with the value propositions below.
+Present sender_company  Solutions: For each challenge, explain how sender_company  a. Addresses the specific need challenges b. Highlights a benefit to company   c. Explains the benefit tocompany and first_name's role. For each solution, provide hyper-specific language that demonstrate how sender_company  can improve an outcome for company (ensure this is completely factual). Use words not numbers to communicate this.
+Provide Concrete Example: Give one specific example of how sender_company could solve a unique challenge for company , based on their industry or structure. Ensure this example uses language and metrics highly specific to first_name's role and industry, avoiding generic AI buzzwords.
+Recent Company News:
+Identify a recent newsworthy event or development specific to company  or first_name's role. Ensure the news is from the last 6 months only. 
+Briefly explain how this event might relate to the challenges or priorities identified earlier.
+[Use the following information as sources]:
+Linkedin profile: "linkedin_profile ."
+Company Google News (ensure only last 6 months) "company_google_search_notes."
+company website data: "company_website_data "
+sender_company value propositions here: "sender_value_propositions
  
                 """
                 user_message = f""" 
@@ -149,7 +151,7 @@ Ensure you use only factual information from the provided sources, including Lin
         elif is_valid_url(url):
             raw_html = fetch_html_selenium(url)
             data_response = html_to_markdown_with_readability(raw_html)
-
+           
             system_message = f"You are an experienced Sales Development Representative (SDR) at **Initializ**. Your task is to create a personalized outreach strategy based on the content of a webpage. The webpage provides useful information that can help you understand the potential prospect's needs. Here is the content: {data_response}"
 
             user_message = f"Summarize the content of the following webpage: {data_response}. Focus on any information that can help create an outreach strategy for a prospect."
